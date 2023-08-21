@@ -1,0 +1,7 @@
+user: "### Human:"
+bot: "### Belle:"
+turn_template: "<|user|><|user-message|>\n\n<|bot|><|bot-message|>\n\n"
+context: ""
+
+
+# https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/main/src/llmtuner/extras/template.py
