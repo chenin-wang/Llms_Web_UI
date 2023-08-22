@@ -22,11 +22,16 @@ from modules.logging_colors import logger
 from modules.models import clear_torch_cache, local_rank
 
 
+# generate_reply_wrapper(包装成html输出)-->generate_reply（主接口）-->_generate_reply-->apply_extensions+generate_reply_HF-->
+# encode+apply_extensions+generate_with_streaming+model.generate+get_reply_from_output_ids-->decode
+
 def generate_reply(*args, **kwargs):
+    """主接口"""
     shared.generation_lock.acquire()
     try:
         for result in _generate_reply(*args, **kwargs):
             yield result
+        logger.info(result)
     finally:
         shared.generation_lock.release()
 
@@ -130,6 +135,8 @@ def get_encoded_length(prompt):
 def get_max_prompt_length(state):
     return state['truncation_length'] - state['max_new_tokens']
 
+# generate_reply_wrapper(包装成html输出)-->generate_reply（主接口）-->_generate_reply-->apply_extensions+generate_reply_HF-->
+# encode+apply_extensions+generate_with_streaming+model.generate+get_reply_from_output_ids-->decode
 
 def generate_reply_wrapper(question, state, stopping_strings=None):
     """

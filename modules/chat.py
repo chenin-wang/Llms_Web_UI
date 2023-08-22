@@ -25,7 +25,8 @@ from modules.utils import (
     replace_all,
     save_file
 )
-
+# generate_chat_reply_wrapper（generate_chat_reply，chat_html_wrapper）-->generate_chat_reply(chatbot_wrapper)-->
+# chatbot_wrapper(apply_extensions,get_stopping_strings,generate_chat_prompt,generate_reply)
 
 def str_presenter(dumper, data):
     """
@@ -178,7 +179,6 @@ def get_stopping_strings(state):
 
     return stopping_strings
 
-
 def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_message=True):
     history = state['history']
     output = copy.deepcopy(history)
@@ -292,7 +292,8 @@ def generate_chat_reply(text, state, regenerate=False, _continue=False, loading_
     for history in chatbot_wrapper(text, state, regenerate=regenerate, _continue=_continue, loading_message=loading_message):
         yield history
 
-
+# generate_chat_reply_wrapper（generate_chat_reply，chat_html_wrapper）-->generate_chat_reply(chatbot_wrapper)-->
+# chatbot_wrapper(apply_extensions,get_stopping_strings,generate_chat_prompt,generate_reply)
 # Same as above but returns HTML for the UI
 def generate_chat_reply_wrapper(text, state, regenerate=False, _continue=False):
     if state['start_with'] != '' and not _continue:

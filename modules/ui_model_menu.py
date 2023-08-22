@@ -74,7 +74,8 @@ def create_ui():
                                 shared.gradio[f'gpu_memory_{i}'] = gr.Slider(label=f"gpu-memory in MiB for device :{i}", maximum=total_mem[i], value=default_gpu_mem[i])
 
                             shared.gradio['cpu_memory'] = gr.Slider(label="cpu-memory in MiB", maximum=total_cpu_mem, value=default_cpu_mem)
-                            shared.gradio['transformers_info'] = gr.Markdown('load-in-4bit params:')
+                            shared.gradio['transformers_info'] = gr.Markdown("""load-in-4bit params:
+                                                                             the [accelerate quantization documentation](https://huggingface.co/docs/accelerate/usage_guides/quantization)""")
                             shared.gradio['compute_dtype'] = gr.Dropdown(label="compute_dtype", choices=["bfloat16", "float16", "float32"], value=shared.args.compute_dtype)
                             shared.gradio['quant_type'] = gr.Dropdown(label="quant_type", choices=["nf4", "fp4"], value=shared.args.quant_type)
 

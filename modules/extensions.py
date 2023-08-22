@@ -45,8 +45,8 @@ def load_extensions():
                 traceback.print_exc()
 
 
-# This iterator returns the extensions in the order specified in the command-line
 def iterator():
+    '''This iterator returns the extensions in the order specified in the command-line'''
     for name in sorted(state, key=lambda x: state[x][1]):
         if state[name][0]:
             yield getattr(extensions, name).script, name
@@ -200,6 +200,7 @@ def create_extensions_tabs():
 
 
 EXTENSION_MAP = {
+    # partial() 函数被用来创建一个新的可调用对象。它将函数 _apply_tokenizer_extensions 的第一个参数固定为 "tokenizer_modifier"，并返回一个新的可调用对象。
     "input": partial(_apply_string_extensions, "input_modifier"),
     "output": partial(_apply_string_extensions, "output_modifier"),
     "chat_input": _apply_chat_input_extensions,

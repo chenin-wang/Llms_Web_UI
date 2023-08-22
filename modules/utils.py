@@ -13,7 +13,6 @@ def gradio(*keys) -> list:
     Helper function to get multiple values from shared.gradio
     从shared.py文件中设置的字典中提取指定keys的值,
     """
-def gradio(*keys):
     if len(keys) == 1 and type(keys[0]) in [list, tuple]:
         keys = keys[0]
 

@@ -88,6 +88,7 @@ def list_model_elements():
 
 
 def list_interface_input_elements():
+    """存储界面变量，方便函数以字典的形式使用界面变量"""
     elements = [
         'max_new_tokens',
         'auto_max_new_tokens',
@@ -121,8 +122,9 @@ def list_interface_input_elements():
         'stream',
         'tfs',
         'top_a',
-        "langchain_temperature",
-        'langchain_top_p',
+        # "langchain_temperature",
+        # 'langchain_top_p',
+        # "langchain_input",
     ]
 
     # Chat elements
@@ -161,13 +163,14 @@ def list_interface_input_elements():
 
 
 def gather_interface_values(*args):
+    """收集gradio界面中的value更新到state"""
     output = {}
     for i, element in enumerate(list_interface_input_elements()):
         output[element] = args[i]
 
     if not shared.args.multi_user:
         shared.persistent_interface_state = output
-
+    
     return output
 
 
