@@ -49,6 +49,9 @@ def infer_loader(model_name):
 
 # UI: update the command-line arguments based on the interface values
 def update_model_parameters(state, initial=False):
+    """
+    将list_model_elements中的参数更新到shared.args的参数中
+    """
     elements = ui.list_model_elements()  # the names of the parameters
     gpu_memories = []
 

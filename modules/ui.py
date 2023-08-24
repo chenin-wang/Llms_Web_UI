@@ -78,7 +78,12 @@ def list_model_elements():
         'gpu_split',
         'max_seq_len',
         'compress_pos_emb',
-        'alpha_value'
+        'alpha_value',       
+    ]
+    
+    # langchian elements
+    elements += [
+        'langchain_verbose',
     ]
 
     for i in range(torch.cuda.device_count()):
@@ -122,9 +127,6 @@ def list_interface_input_elements():
         'stream',
         'tfs',
         'top_a',
-        # "langchain_temperature",
-        # 'langchain_top_p',
-        # "langchain_input",
     ]
 
     # Chat elements

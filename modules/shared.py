@@ -101,6 +101,7 @@ parser.add_argument('--loader', type=str, help='Choose the model loader manually
 
 # langchain
 parser.add_argument('--langchain_loader', type=str, help='Choose the lagnchian loader manually, otherwise, it will get autodetected. Valid options: transformers, OpenAI')
+parser.add_argument('--langchain_verbose', action='store_true', help='Print the langchains verbose to the terminal.')
 
 # Accelerate/transformers
 parser.add_argument('--cpu', action='store_true', help='Use the CPU to generate text. Warning: Training on CPU is extremely slow.')

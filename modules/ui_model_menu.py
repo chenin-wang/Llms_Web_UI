@@ -106,7 +106,7 @@ def create_ui():
                             shared.gradio['cpu'] = gr.Checkbox(label="cpu", value=shared.args.cpu)
                             shared.gradio['load_in_8bit'] = gr.Checkbox(label="load-in-8bit", value=shared.args.load_in_8bit)
                             shared.gradio['bf16'] = gr.Checkbox(label="bf16", value=shared.args.bf16)
-                            shared.gradio['auto_devices'] = gr.Checkbox(label="auto-devices", value=shared.args.auto_devices)
+                            shared.gradio['auto_devices'] = gr.Checkbox(label="auto-devices", value=shared.args.auto_devices,info='if use langchain,must set true.')
                             shared.gradio['disk'] = gr.Checkbox(label="disk", value=shared.args.disk)
                             shared.gradio['load_in_4bit'] = gr.Checkbox(label="load-in-4bit", value=shared.args.load_in_4bit)
                             shared.gradio['use_double_quant'] = gr.Checkbox(label="use_double_quant", value=shared.args.use_double_quant)

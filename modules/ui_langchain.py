@@ -18,9 +18,10 @@ from modules.prompts import count_tokens, load_prompt
 from modules.langchains import (
     extract_template_input_variables,
     promptTemplate_to_prompt,
+    llm_generate,
     )
 
-inputs = ('langchain_final_input', 'interface_state')
+inputs = ('langchain_template', 'interface_state',"langchain_slot")
 outputs = ('langchain_output')
 
 def create_ui(default_preset):
@@ -38,6 +39,7 @@ def create_ui(default_preset):
                     with gr.Column():
                         shared.gradio['langchain_temperature'] = gr.Slider(0.1, 1.99, value=langchain_params['temperature'], step=0.01, label='langchain_temperature',interactive=False)
                         shared.gradio['langchain_top_p'] = gr.Slider(0.0, 1.0, value=langchain_params['top_p'], step=0.01, label='langchain_top_p',interactive=False)
+                        shared.gradio['langchain_verbose'] = gr.Checkbox(label="verbose", value=shared.args.langchain_verbose)
             with gr.Column():
                 with gr.Accordion("Learn more", open=False):
                     gr.Markdown("""
@@ -47,10 +49,10 @@ def create_ui(default_preset):
                                 """, elem_classes="markdown")
         with gr.Row():
             with gr.Column():
-                shared.gradio['langchain_template'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], lines=5, label='template')
+                shared.gradio['langchain_template'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], lines=5, label='question_template')
                 shared.gradio['langchain_input_variables'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], label='input_variables',interactive=False)
                 with gr.Row():
-                    shared.gradio['langchain_input'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], lines=5, label='Input')
+                    shared.gradio['langchain_slot'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], lines=5, label='slot')
                 shared.gradio['langchain_final_input'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], label='final_input',interactive=False)
                 shared.gradio['token-counter-langchain'] = gr.HTML(value="<span>0</span>", elem_classes=["token-counter", "default-token-counter"])
                 with gr.Row():
@@ -88,18 +90,18 @@ def create_event_handlers():
         ui.apply_interface_values, gradio('interface_state'), gradio(ui.list_interface_input_elements()), show_progress=False).then(
         update_model_parameters, gradio('interface_state'), None)
     
-    shared.gradio['langchain_template'].change(
-        extract_template_input_variables,gradio("langchain_template"),gradio('langchain_input_variables')).then(
-        promptTemplate_to_prompt,gradio("langchain_template","langchain_input"),gradio("langchain_final_input","langchains_status"),show_progress=False
-    )
-
     shared.gradio['Generate-prompt'].click(
-        promptTemplate_to_prompt,gradio("langchain_template","langchain_input"),gradio("langchain_final_input","langchains_status"),show_progress=False)
+        extract_template_input_variables,gradio("langchain_template"),gradio('langchain_input_variables')).then(
+        promptTemplate_to_prompt,gradio("langchain_template","langchain_slot"),gradio("langchain_final_input","langchains_status"),show_progress=False).then(
+        status, None, gradio('langchains_status')
+        )
+
 
     shared.gradio['Generate-langchain'].click(
         lambda x: x, gradio('langchain_final_input'), gradio('last_input-langchain')).then(
         ui.gather_interface_values, gradio(shared.input_elements), gradio('interface_state')).then(
-        generate_reply, gradio(inputs), gradio(outputs), show_progress=False).then(
+        update_model_parameters, gradio('interface_state'), None).then(
+        llm_generate, gradio(inputs), gradio(outputs), show_progress=False).then(
         ui.gather_interface_values, gradio(shared.input_elements), gradio('interface_state')).then(
         lambda: None, None, None, _js=f'() => {{{ui.audio_notification_js}}}').then(
         status, None, gradio('langchains_status')
@@ -123,7 +125,7 @@ def create_event_handlers():
     shared.gradio['prompt_menu-langchain'].change(load_prompt, gradio('prompt_menu-langchain'), gradio('langchain_template'), show_progress=False)
 
     shared.gradio['save_prompt-langchain'].click(
-        lambda x: x, gradio('langchain_input'), gradio('save_contents')).then(
+        lambda x: x, gradio('langchain_slot'), gradio('save_contents')).then(
         lambda: 'prompts/', None, gradio('save_root')).then(
         lambda: utils.current_time() + '.txt', None, gradio('save_filename')).then(
         lambda: gr.update(visible=True), None, gradio('file_saver'))
