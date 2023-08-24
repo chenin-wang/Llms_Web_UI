@@ -45,8 +45,8 @@ def load_extensions():
                 traceback.print_exc()
 
 
+# This iterator returns the extensions in the order specified in the command-line
 def iterator():
-    '''This iterator returns the extensions in the order specified in the command-line'''
     for name in sorted(state, key=lambda x: state[x][1]):
         if state[name][0]:
             yield getattr(extensions, name).script, name

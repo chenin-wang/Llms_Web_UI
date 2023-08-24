@@ -347,7 +347,7 @@ def get_max_memory_dict():
     # for the maximum memory of device :0
     elif shared.args.auto_devices:
         total_mem = (torch.cuda.get_device_properties(0).total_memory / (1024 * 1024))
-        suggestion = round((total_mem - 1000) / 1000) * 1000 
+        suggestion = round((total_mem - 1000) / 1000) * 1000
         if total_mem - suggestion < 800:
             suggestion -= 1000
 

@@ -172,7 +172,6 @@ def gather_interface_values(*args):
 
     if not shared.args.multi_user:
         shared.persistent_interface_state = output
-    
     return output
 
 

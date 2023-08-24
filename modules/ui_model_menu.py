@@ -68,8 +68,6 @@ def create_ui():
                 with gr.Box():
                     with gr.Row():
                         with gr.Column():
-                            shared.gradio['memory_info'] = gr.Markdown('memory_info:cpu,gpu')
-                            
                             for i in range(len(total_mem)):
                                 shared.gradio[f'gpu_memory_{i}'] = gr.Slider(label=f"gpu-memory in MiB for device :{i}", maximum=total_mem[i], value=default_gpu_mem[i])
 
