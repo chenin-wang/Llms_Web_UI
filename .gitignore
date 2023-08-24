@@ -20,7 +20,7 @@ venv/
 .vscode
 .idea/
 *.bak
-*.ipynb
+# *.ipynb
 *.log
 
 settings.json

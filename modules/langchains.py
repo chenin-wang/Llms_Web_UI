@@ -140,18 +140,18 @@ def gengral_chain(
     general llm chain.
     """
 
-    if is_hub:
-        llm_chain = LLMChain(prompt=prompt, 
-                            llm=HuggingFaceHub(repo_id="google/flan-t5-xl", 
-                                            model_kwargs={"temperature":0, 
-                                                            "max_length":64}))
-    else:
-        input_variables=extract_template_input_variables(question)
-        prompt = PromptTemplate(template=question, input_variables=input_variables)
-        llm_chain = LLMChain(prompt=prompt, 
-                            llm=llm,
-                            verbose=shared.args.langchain_verbose,
-                            )
+    # if is_hub:
+    #     llm_chain = LLMChain(prompt=prompt, 
+    #                         llm=HuggingFaceHub(repo_id="google/flan-t5-xl", 
+    #                                         model_kwargs={"temperature":0, 
+    #                                                         "max_length":64}))
+    # else:
+    input_variables=extract_template_input_variables(question)
+    prompt = PromptTemplate(template=question, input_variables=input_variables)
+    llm_chain = LLMChain(prompt=prompt, 
+                        llm=llm,
+                        verbose=shared.args.langchain_verbose,
+                        )
     return llm_chain.run(**string_to_dict(input_dict))
 
 
