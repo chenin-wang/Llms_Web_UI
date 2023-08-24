@@ -18,10 +18,11 @@ from modules.prompts import count_tokens, load_prompt
 from modules.langchains import (
     extract_template_input_variables,
     promptTemplate_to_prompt,
-    llm_generate,
+    apply_agent,
+    LOAD_AGENT_MAP
     )
 
-inputs = ('langchain_template', 'interface_state',"langchain_slot")
+inputs = ('filter_by_Agent','langchain_template', 'interface_state')
 outputs = ('langchain_output')
 
 def create_ui(default_preset):
@@ -30,7 +31,7 @@ def create_ui(default_preset):
     with gr.Tab("Langchain🦜️🔗", elem_id="Langchain-tab"):
         shared.gradio['last_input-langchain'] = gr.State('')
         with gr.Row():
-            shared.gradio['langchain_loader'] = gr.Dropdown(label="langchain loader", choices=["Transformers", "OpenAI"], value=None)
+            shared.gradio['filter_by_Agent'] = gr.Dropdown(label="Filter by agent", choices=["gengral_chain"] + list(LOAD_AGENT_MAP.keys()), value="gengral_chain", elem_classes='slim-dropdown')
             shared.gradio['langchain_embeding'] = gr.Dropdown(choices=utils.get_available_models(), value=default_preset, label='langchain_embeding', elem_classes='slim-dropdown')
 
         with gr.Row():
@@ -83,7 +84,7 @@ def status():
 
 def create_event_handlers():
 
-    shared.gradio['langchain_loader'].change(loaders.make_loader_params_visible, gradio('langchain_loader'), gradio(loaders.get_all_params()))
+    # shared.gradio['filter_by_Agent'].change(loaders.blacklist_samplers, gradio('filter_by_Agent'), gradio(loaders.list_all_samplers()), show_progress=False)
     shared.gradio['langchain_embeding'].change(
         ui.gather_interface_values, gradio(shared.input_elements), gradio('interface_state')).then(
         apply_model_settings_to_state, gradio('langchain_embeding', 'interface_state'), gradio('interface_state')).then(
@@ -101,7 +102,7 @@ def create_event_handlers():
         lambda x: x, gradio('langchain_final_input'), gradio('last_input-langchain')).then(
         ui.gather_interface_values, gradio(shared.input_elements), gradio('interface_state')).then(
         update_model_parameters, gradio('interface_state'), None).then(
-        llm_generate, gradio(inputs), gradio(outputs), show_progress=False).then(
+        apply_agent, gradio(inputs), gradio(outputs), show_progress=False).then(
         ui.gather_interface_values, gradio(shared.input_elements), gradio('interface_state')).then(
         lambda: None, None, None, _js=f'() => {{{ui.audio_notification_js}}}').then(
         status, None, gradio('langchains_status')

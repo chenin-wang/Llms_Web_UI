@@ -18,6 +18,7 @@ prompt_history =""
 langchain_embed_name = "None" 
 input_params=[]
 reload_inputs=[]
+agent=None
 
 # Generation variables
 stop_everything = False

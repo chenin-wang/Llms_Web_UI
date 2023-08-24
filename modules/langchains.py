@@ -3,6 +3,7 @@ import copy
 import functools
 import json
 import re
+import os
 from pathlib import Path
 import importlib
 from functools import wraps
@@ -15,7 +16,6 @@ import yaml
 from PIL import Image
 
 import modules.shared as shared
-from modules.extensions import apply_extensions
 from modules.html_generator import chat_html_wrapper, make_thumbnail
 from modules.logging_colors import logger
 from modules.text_generation import (
@@ -30,13 +30,12 @@ from modules.utils import (
     save_file
 )
 
-
-from langchain.llms import HuggingFacePipeline, HuggingFaceHub
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from langchain.llms import HuggingFacePipeline, HuggingFaceHub,OpenAI
 import langchain
 from langchain import PromptTemplate, LLMChain
 from langchain.embeddings import HuggingFaceEmbeddings,HuggingFaceHubEmbeddings
-
+from langchain.agents import load_tools, initialize_agent, AgentType  
 from pydantic import BaseModel, validator
 
 from langchain.vectorstores import FAISS
@@ -71,7 +70,8 @@ from langchain.vectorstores import FAISS
 # final_prompt.format(input="What is 4+4?")
 
 INIT_LLMS_DOCSTRING=r"""currently only ('text2text-generation', 'text-generation') are supported"""
-langchain.verbose = False
+langchain.verbose = True
+os.environ['SERPAPI_API_KEY'] = '65174acf6ce3136739e1534103664bbd5fc7862b4ab41c676831e63694a943b'
 
 def add_end_docstrings(*docstr):
     def docstring_decorator(fn):
@@ -131,23 +131,14 @@ def promptTemplate_to_prompt(question,
 
 
 @add_end_docstrings(INIT_LLMS_DOCSTRING)
-def llm_generate(
+def gengral_chain(
     question, 
-    state:dict, # 参数
+    llm,
     input_dict=None, # question中的slot
-    stopping_strings:Optional[str]=None,
-    is_hub:Optional[bool] = False,
 ):
     """
-    generate the llm chain.
+    general llm chain.
     """
-
-    generate_params = {}
-    # , 'do_sample', 'temperature', 'top_p', 'typical_p', 'repetition_penalty', 'repetition_penalty_range', 
-    #           'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 
-    #           'early_stopping', 'tfs', 'top_a', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'guidance_scale'
-    for k in ['max_new_tokens','temperature','do_sample','top_p',]:
-        generate_params[k] = state[k]
 
     if is_hub:
         llm_chain = LLMChain(prompt=prompt, 
@@ -157,12 +148,8 @@ def llm_generate(
     else:
         input_variables=extract_template_input_variables(question)
         prompt = PromptTemplate(template=question, input_variables=input_variables)
-        pipe = pipeline(
-            "text-generation", model=shared.model, tokenizer=shared.tokenizer, **generate_params
-        )
-        local_llm = HuggingFacePipeline(pipeline=pipe)
         llm_chain = LLMChain(prompt=prompt, 
-                            llm=local_llm,
+                            llm=llm,
                             verbose=shared.args.langchain_verbose,
                             )
     return llm_chain.run(**string_to_dict(input_dict))
@@ -193,52 +180,51 @@ def embedding_generate(
     return embedding
 
 
-def load_agent(agent:None):
-    """加载agent"""
-    logger.info(f"Loading {agent}...")
 
-    load_agent_map = {
-    'LLMChain': llm_generate,
-    'zero_shot_ReAct_Agent': zero_shot_react,
-    "conversational_react": conversational_react,
-    "chat_zero_shot_react": chat_zero_shot_react,
-    "chat_conversational_react": chat_conversational_react,
-    "react_docstore": react_docstore,
-    'PlanAndExecute_Agent': plan_execute,
-    }
+def loade_llm(
+    state:dict, # 参数
+    is_openAI:Optional[bool] = False,
+):
+    
+    generate_params = {}
+    # , 'do_sample', 'temperature', 'top_p', 'typical_p', 'repetition_penalty', 'repetition_penalty_range', 
+    #           'encoder_repetition_penalty', 'top_k', 'min_length', 'no_repeat_ngram_size', 'num_beams', 'penalty_alpha', 'length_penalty', 
+    #           'early_stopping', 'tfs', 'top_a', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'guidance_scale'
+    for k in ['max_new_tokens','temperature','do_sample','top_p',]:
+        generate_params[k] = state[k]
 
-    if agent is None:
-            if shared.args.agent is not None:
-                agent = shared.args.agent
-            else:
-                if agent is None:
-                    logger.error('The agent does not exist. Exiting.')
-                    return None, None
-                
-    shared.args.agent = agent
-    output = load_agent_map[agent]()
-    return output
+    if is_openAI:
+        local_llm=OpenAI(**generate_params)
+        return local_llm
+    else:
+        if shared.model is not None:
+            pipe = pipeline(
+                "text-generation", model=shared.model, tokenizer=shared.tokenizer, **generate_params
+            )
+            local_llm = HuggingFacePipeline(pipeline=pipe)
+            return local_llm
+
+    
+
+# https://github.com/QwenLM/Qwen-7B/blob/main/examples/transformers_agent.md
 
 
-def zero_shot_react():
-    from langchain.agents import load_tools, initialize_agent, AgentType  
-    from langchain.llms import OpenAI
+def zero_shot_react(question,llm,):
 
-    llm = OpenAI(temperature=0)
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
-    agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
-    agent.run("Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?")
+    agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=shared.args.langchain_verbose,)
+    agent.run(question)
 
 def conversational_react():
     pass
 
-def chat_zero_shot_react():
+def chat_zero_shot_react(question,llm,):
     from langchain.chat_models import ChatOpenAI
     from langchain.agents import load_tools, initialize_agent, AgentType  
 
     chat_model = ChatOpenAI(temperature=0)  
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
-    agent = initialize_agent(tools, chat_model, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+    agent = initialize_agent(tools, chat_model, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=shared.args.langchain_verbose,)
 
 def chat_conversational_react():
     pass
@@ -258,3 +244,26 @@ def react_docstore():
 def plan_execute():
     pass
 
+LOAD_AGENT_MAP= {
+    'gengral_chain': gengral_chain,
+    'zero_shot_react': zero_shot_react,
+    "conversational_react": conversational_react,
+    "chat_zero_shot_react": chat_zero_shot_react,
+    "chat_conversational_react": chat_conversational_react,
+    "react_docstore": react_docstore,
+    'PlanAndExecute_Agent': plan_execute,
+    }
+
+@trace_decorator
+def apply_agent(typ,question,state:dict,):
+    # 加载agent
+    logger.info(f"Loading {typ} agent...")
+    if typ not in LOAD_AGENT_MAP:
+        raise ValueError(f"Invalid agent type {typ}")
+
+    llm=loade_llm(state)
+    if llm is None:
+        logger.error('The llm does not exist.')
+    else:
+        return LOAD_AGENT_MAP[typ](question,llm)
+        
