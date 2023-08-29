@@ -10,13 +10,22 @@ from functools import wraps
 import traceback
 import torch
 
+# import sys
+# # 获取当前脚本所在的目录
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# # 计算项目根目录的相对路径
+
+# project_path = os.path.join(current_dir, "experimental")
+
+# # 将项目根目录添加到 sys.path
+# sys.path.append(current_dir)
+# print(current_dir)
+
 from typing import TYPE_CHECKING, Optional, Tuple, Union, Callable, List, Any, Generator
-import gradio as gr
 import yaml
-from PIL import Image
 
 import modules.shared as shared
-from modules.html_generator import chat_html_wrapper, make_thumbnail
 from modules.logging_colors import logger
 from modules.text_generation import (
     generate_reply,
@@ -31,14 +40,18 @@ from modules.utils import (
 )
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-from langchain.llms import HuggingFacePipeline, HuggingFaceHub,OpenAI
+
 import langchain
-from langchain import PromptTemplate, LLMChain
+from langchain.llms import HuggingFacePipeline, HuggingFaceHub,OpenAI
 from langchain.embeddings import HuggingFaceEmbeddings,HuggingFaceHubEmbeddings
 from langchain.agents import load_tools, initialize_agent, AgentType  
-from pydantic import BaseModel, validator
+from langchain.agents.tools import Tool
 
+from pydantic import BaseModel, validator
+from langchain import SerpAPIWrapper,LLMMathChain,PromptTemplate, LLMChain
 from langchain.vectorstores import FAISS
+
+from langchain_experimental.plan_and_execute import PlanAndExecute, load_agent_executor, load_chat_planner
 
 # from langchain.prompts import (
 #             FewShotChatMessagePromptTemplate,
@@ -71,7 +84,7 @@ from langchain.vectorstores import FAISS
 
 INIT_LLMS_DOCSTRING=r"""currently only ('text2text-generation', 'text-generation') are supported"""
 langchain.verbose = True
-os.environ['SERPAPI_API_KEY'] = '65174acf6ce3136739e1534103664bbd5fc7862b4ab41c676831e63694a943b'
+os.environ['SERPAPI_API_KEY'] = '65174acf6ce3136739e1534103664bbd5fc7862b4ab41c676831e63694a943bb'
 
 def add_end_docstrings(*docstr):
     def docstring_decorator(fn):
@@ -220,7 +233,6 @@ def conversational_react():
 
 def chat_zero_shot_react(question,llm,):
     from langchain.chat_models import ChatOpenAI
-    from langchain.agents import load_tools, initialize_agent, AgentType  
 
     chat_model = ChatOpenAI(temperature=0)  
     tools = load_tools(["serpapi", "llm-math"], llm=llm)
@@ -239,19 +251,37 @@ def react_docstore():
     tools = [Tool(name="Search", func=docstore.search)] 
 
     llm = OpenAI(temperature=0, model_name="text-davinci-002")
-    agent = initialize_agent(tools, llm, agent=AgentType.REACT_DOCSTORE, verbose=True)
+    agent = initialize_agent(tools, llm, agent=AgentType.REACT_DOCSTORE, verbose=shared.args.langchain_verbose)
 
-def plan_execute():
-    pass
+def plan_execute(question,llm,):
+    search = SerpAPIWrapper()
+    llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=shared.args.langchain_verbose)
+    tools = [
+        Tool(
+            name = "Search",
+            func=search.run,
+            description="useful for when you need to answer questions about current events"
+        ),
+        Tool(
+            name="Calculator",
+            func=llm_math_chain.run,
+            description="useful for when you need to answer questions about math"
+        ),
+    ]
+    planner = load_chat_planner(llm)
+    executor = load_agent_executor(llm, tools, verbose=shared.args.langchain_verbose)
+    agent = PlanAndExecute(planner=planner, executor=executor, verbose=shared.args.langchain_verbose)
+    agent.run(question)
+
 
 LOAD_AGENT_MAP= {
     'gengral_chain': gengral_chain,
     'zero_shot_react': zero_shot_react,
-    "conversational_react": conversational_react,
-    "chat_zero_shot_react": chat_zero_shot_react,
-    "chat_conversational_react": chat_conversational_react,
-    "react_docstore": react_docstore,
-    'PlanAndExecute_Agent': plan_execute,
+    # "conversational_react": conversational_react,
+    # "chat_zero_shot_react": chat_zero_shot_react,
+    # "chat_conversational_react": chat_conversational_react,
+    # "react_docstore": react_docstore,
+    'PlanAndExecute': plan_execute,
     }
 
 @trace_decorator

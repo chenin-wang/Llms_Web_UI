@@ -208,6 +208,7 @@ def generation_config_init_patch(self, **kwargs):
 
 
 def hijack_samplers():
+    """将原始方法的引用保存到新的属性中,将一个名为自定义的函数赋值给原方法，以替换原有的实现"""
     transformers.GenerationMixin._get_logits_warper_old = transformers.GenerationMixin._get_logits_warper
     transformers.GenerationMixin._get_logits_warper = get_logits_warper_patch
 

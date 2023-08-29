@@ -50,7 +50,7 @@ def create_ui(default_preset):
                                 """, elem_classes="markdown")
         with gr.Row():
             with gr.Column():
-                shared.gradio['langchain_template'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], lines=5, label='question_template')
+                shared.gradio['langchain_template'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], lines=5, label='question')
                 shared.gradio['langchain_input_variables'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], label='input_variables',interactive=False)
                 with gr.Row():
                     shared.gradio['langchain_slot'] = gr.Textbox(value='', elem_classes=['textbox_default', 'add_scrollbar'], lines=5, label='slot')
