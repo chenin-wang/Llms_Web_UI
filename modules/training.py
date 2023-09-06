@@ -287,7 +287,8 @@ def do_train(lora_name: str, always_override: bool, save_steps: int, micro_batch
     lora_file_path = f"{Path(shared.args.lora_dir)}/{lora_file_path}"
     actual_lr = float(learning_rate)
     model_type = type(shared.model).__name__
-
+    logger.info(f"model_type:{model_type}")
+    
     if model_type in MODEL_CLASSES:
         model_id = MODEL_CLASSES[model_type]
     else:
